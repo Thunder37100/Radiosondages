@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Station d'Analyse de Radiosondage</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="barre-haut">
+    <div>
+      <h1>Analyseur de Radiosondage Pro</h1>
+      <span id="info-fichier">Chargement du dernier sondage...</span>
+    </div>
+
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <!-- Menu déroulant automatique des 5 stations françaises -->
+      <select id="select-station" style="padding:7px 10px; border-radius:6px; font-weight:bold; cursor:pointer;">
+        <option value="07145">Trappes (07145)</option>
+        <option value="07110">Brest-Guipavas (07110)</option>
+        <option value="07510">Bordeaux-Mérignac (07510)</option>
+        <option value="07645">Nîmes-Courbessac (07645)</option>
+        <option value="07761">Ajaccio (07761)</option>
+      </select>
+
+      <!-- Bouton manuel conservé pour les archives locales -->
+      <input type="file" id="fichier-csv" accept=".csv,.txt">
+    </div>
+  </header>
+
+  <main class="tableau-bord">
+    
+    <section class="colonne-gauche">
+      <div class="titre-bloc">Émagramme Skew-T log-P (T, Tv, Tw, Td &amp; Barbules)</div>
+      <canvas id="canvas-skewt" width="660" height="640"></canvas>
+    </section>
+
+    <section class="colonne-droite">
+      
+      <div class="sous-bloc-hodo">
+        <div class="titre-bloc">Hodographe (m/s)</div>
+        <canvas id="canvas-hodographe" width="300" height="300"></canvas>
+      </div>
+
+      <div class="sous-bloc-indices">
+        <div class="titre-bloc">Paramètres (Correction Virtuelle Tv)</div>
+        <table class="table-indices">
+          <thead>
+            <tr>
+              <th>Paramètre</th>
+              <th>CAPE / Valeur</th>
+              <th>CIN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Surface (SB)</td>
+              <td id="val-sbcape">-- J/kg</td>
+              <td id="val-sbcin">-- J/kg</td>
+            </tr>
+            <tr>
+              <td>Mixed-Layer (ML 100hPa)</td>
+              <td id="val-mlcape">-- J/kg</td>
+              <td id="val-mlcin">-- J/kg</td>
+            </tr>
+            <tr>
+              <td>Most-Unstable (MU)</td>
+              <td id="val-mucape">-- J/kg</td>
+              <td id="val-mucin">-- J/kg</td>
+            </tr>
+            <tr>
+              <td>Niveau LCL (Surface)</td>
+              <td colspan="2" id="val-lcl">-- m AGL</td>
+            </tr>
+            <tr>
+              <td>Gradient 700–500 hPa</td>
+              <td colspan="2" id="val-lapse">-- °C/km</td>
+            </tr>
+            <tr>
+              <td>Cisaillement 0–1 km</td>
+              <td colspan="2" id="val-shear1">-- m/s (-- kt)</td>
+            </tr>
+            <tr>
+              <td>Cisaillement 0–6 km</td>
+              <td colspan="2" id="val-shear6">-- m/s (-- kt)</td>
+            </tr>
+            <tr>
+              <td>SRH 0–1 km (Bunkers RM)</td>
+              <td colspan="2" id="val-srh1">-- m²/s²</td>
+            </tr>
+            <tr>
+              <td>SRH 0–3 km (Bunkers RM)</td>
+              <td colspan="2" id="val-srh3">-- m²/s²</td>
+            </tr>
+            <tr>
+              <td>SCP (Supercell Composite)</td>
+              <td colspan="2" id="val-scp">--</td>
+            </tr>
+            <tr>
+              <td>STP (Significant Tornado)</td>
+              <td colspan="2" id="val-stp">--</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="physique.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
