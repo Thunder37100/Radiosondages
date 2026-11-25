@@ -6,7 +6,6 @@ import urllib.request
 import http.cookiejar
 from datetime import datetime, timedelta, timezone
 
-# Force IPv4 sur GitHub Actions
 ancien_getaddrinfo = socket.getaddrinfo
 def getaddrinfo_ipv4(*args, **kwargs):
     res = ancien_getaddrinfo(*args, **kwargs)
@@ -15,9 +14,15 @@ socket.getaddrinfo = getaddrinfo_ipv4
 
 STATIONS = ("07145", "07110", "07510", "07645", "07761")
 os.makedirs("donnees", exist_ok=True)
-infos = {}
 
-# Création d'un navigateur avec gestion des cookies (indispensable pour éviter le 503 du Wyoming)
+infos = {}
+if os.path.exists("donnees/infos.json"):
+    try:
+        with open("donnees/infos.json", "r", encoding="utf-8") as f:
+            infos = json.load(f)
+    except Exception:
+        infos = {}
+
 cookies = http.cookiejar.CookieJar()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
 opener.addheaders = [
@@ -29,47 +34,47 @@ opener.addheaders = [
 
 HOTE = ".".join(("weather", "uwyo", "edu"))
 
-# 1. Ouverture de la page d'accueil pour initialiser le cookie de session
 try:
     opener.open("https://" + HOTE + "/upperair/sounding.shtml", timeout=15).read()
-    time.sleep(2)
+    time.sleep(3)
 except Exception as e:
     print(f"Init session Wyoming : {e}")
 
-# 2. On teste les 3 derniers créneaux synoptiques officiels (00Z et 12Z)
 maintenant = datetime.now(timezone.utc)
 heure_synoptique = maintenant.replace(hour=(maintenant.hour // 12) * 12, minute=0, second=0, microsecond=0)
-creneaux = tuple(heure_synoptique - timedelta(hours=12 * i) for i in range(3))
+creneaux = tuple(heure_synoptique - timedelta(hours=12 * i) for i in range(2))
 
-for station in STATIONS:
+for idx, station in enumerate(STATIONS):
+    # Pause de 65s après la 3e station pour contourner le quota du Wyoming (3 requêtes / minute)
+    if idx == 3:
+        print("Pause de 65 secondes pour réinitialiser le quota serveur...")
+        time.sleep(65.0)
+
     succes = False
     for dt in creneaux:
         date_url = dt.strftime("%Y-%m-%d%%20%H:00:00")
-        suffixe = "&src=BUFR" if station != "07645" else ""
-        url = "https://" + HOTE + f"/wsgi/sounding?datetime={date_url}&id={station}&type=TEXT:CSV{suffixe}"
+        url = "https://" + HOTE + f"/wsgi/sounding?datetime={date_url}&id={station}&type=TEXT:CSV&src=BUFR"
 
-        # Jusqu'à 2 essais sur le même créneau si le serveur renvoie 503 Too Busy
-        for essai in range(2):
-            try:
-                time.sleep(4.0)
-                with opener.open(url, timeout=25) as rep:
-                    texte = rep.read().decode("utf-8", errors="ignore").strip()
-                    if "pressure_hPa" in texte and len(texte.splitlines()) > 15:
-                        with open(f"donnees/{station}.csv", "w", encoding="utf-8") as f:
-                            f.write(texte)
-                        infos[station] = dt.strftime("Observation réelle — %d/%m/%Y à %HZ")
-                        print(f"OK Ballon réel {station} -> {infos[station]} ({len(texte.splitlines())-1} niveaux)")
-                        succes = True
-                        break
-            except Exception as e:
-                print(f"Attente Wyoming {station} ({dt.strftime('%d/%m %HZ')}, essai {essai+1}) : {e}")
-                if "503" in str(e):
-                    time.sleep(6.0)
-                    continue
+        try:
+            time.sleep(4.0)
+            with opener.open(url, timeout=25) as rep:
+                texte = rep.read().decode("utf-8", errors="ignore").strip()
+                if "pressure_hPa" in texte and len(texte.splitlines()) > 15:
+                    with open(f"donnees/{station}.csv", "w", encoding="utf-8") as f:
+                        f.write(texte)
+                    infos[station] = dt.strftime("Observation réelle — %d/%m/%Y à %HZ")
+                    print(f"OK Ballon réel {station} -> {infos[station]} ({len(texte.splitlines())-1} niveaux)")
+                    succes = True
+                    break
+        except Exception as e:
+            print(f"Attente Wyoming {station} ({dt.strftime('%d/%m %HZ')}) : {e}")
+            if "503" in str(e):
+                # Si le serveur est occupé, on attend 60s et on ne recule pas vers le vieux run
+                time.sleep(60.0)
                 break
 
-        if succes:
-            break
+    if not succes:
+        print(f"Conservation des données précédentes pour {station}")
 
 with open("donnees/infos.json", "w", encoding="utf-8") as f:
     json.dump(infos, f, ensure_ascii=False, indent=2)
