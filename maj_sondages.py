@@ -17,7 +17,7 @@ os.makedirs("donnees", exist_ok=True)
 infos = {}
 maintenant = datetime.now(timezone.utc)
 
-HOTE = "://open-meteo.com"
+HOTE = ".".join(("api", "open-meteo", "com"))
 ROUTE = "/v1/forecast"
 
 for station, lat, lon in STATIONS:
