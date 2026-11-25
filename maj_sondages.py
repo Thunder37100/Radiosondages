@@ -13,7 +13,7 @@ def getaddrinfo_ipv4(*args, **kwargs):
     return tuple(r for r in res if r.__getitem__(0) == socket.AF_INET)
 socket.getaddrinfo = getaddrinfo_ipv4
 
-STATIONS = ("07145", "07110", "07510", "07481", "07761")
+STATIONS = ("07145", "07110", "07510", "07645", "07761")
 os.makedirs("donnees", exist_ok=True)
 infos = {}
 
