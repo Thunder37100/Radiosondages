@@ -1,6 +1,14 @@
 import os
 import json
 import urllib.request
+import socket
+
+ancien_getaddrinfo = socket.getaddrinfo
+def getaddrinfo_ipv4(*args, **kwargs):
+    res = ancien_getaddrinfo(*args, **kwargs)
+    return tuple(r for r in res if r.__getitem__(0) == socket.AF_INET)
+socket.getaddrinfo = getaddrinfo_ipv4
+
 from datetime import datetime, timezone
 
 STATIONS = (
