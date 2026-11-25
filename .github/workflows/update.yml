@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '15 0,12 * * *'
+    - cron: '15 2,14 * * *'
   workflow_dispatch:
 
 permissions:
@@ -37,3 +37,12 @@ jobs:
           git config --local user.name "MeteoBot"
           git add donnees/
           git diff --quiet && git diff --staged --quiet || (git commit -m "Mise à jour auto des sondages" && git pull --rebase && git push)
+
+      - name: Préparation du site pour GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Publication automatique sur le web
+        id: deployment
+        uses: actions/deploy-pages@v4
