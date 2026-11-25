@@ -43,7 +43,7 @@ for station, lat, lon in STATIONS:
         url = "https://" + HOTE + ROUTE + f"?latitude={lat}&longitude={lon}&hourly={','.join(champs)}&wind_speed_unit=ms&forecast_days=1"
         req = urllib.request.Request(url, headers={"User-Agent": "MeteoAssoBot/1.0"})
 
-        with urllib.request.urlopen(req, timeout=15) as rep:
+        with urllib.request.urlopen(req, timeout=60) as rep:
             data = json.loads(rep.read().decode("utf-8"))
             hourly = data.get("hourly", {})
             times = tuple(hourly.get("time", ()))
