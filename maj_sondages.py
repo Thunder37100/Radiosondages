@@ -45,23 +45,31 @@ for station in STATIONS:
     succes = False
     for dt in creneaux:
         date_url = dt.strftime("%Y-%m-%d%%20%H:00:00")
-        url = "https://" + HOTE + f"/wsgi/sounding?datetime={date_url}&id={station}&type=TEXT:CSV&src=BUFR"
-        try:
-            time.sleep(3.0)
-            with opener.open(url, timeout=25) as rep:
-                texte = rep.read().decode("utf-8", errors="ignore").strip()
-                if "pressure_hPa" in texte and len(texte.splitlines()) > 15:
-                    with open(f"donnees/{station}.csv", "w", encoding="utf-8") as f:
-                        f.write(texte)
-                    infos[station] = dt.strftime("Observation réelle — %d/%m/%Y à %HZ")
-                    print(f"OK Ballon réel {station} -> {infos[station]} ({len(texte.splitlines())-1} niveaux)")
-                    succes = True
-                    break
-        except Exception as e:
-            print(f"Attente Wyoming {station} ({dt.strftime('%d/%m %HZ')}) : {e}")
+        suffixe = "&src=BUFR" if station != "07645" else ""
+        url = "https://" + HOTE + f"/wsgi/sounding?datetime={date_url}&id={station}&type=TEXT:CSV{suffixe}"
 
-    if not succes:
-        print(f"Aucun ballon réel récupéré pour {station}")
+        # Jusqu'à 2 essais sur le même créneau si le serveur renvoie 503 Too Busy
+        for essai in range(2):
+            try:
+                time.sleep(4.0)
+                with opener.open(url, timeout=25) as rep:
+                    texte = rep.read().decode("utf-8", errors="ignore").strip()
+                    if "pressure_hPa" in texte and len(texte.splitlines()) > 15:
+                        with open(f"donnees/{station}.csv", "w", encoding="utf-8") as f:
+                            f.write(texte)
+                        infos[station] = dt.strftime("Observation réelle — %d/%m/%Y à %HZ")
+                        print(f"OK Ballon réel {station} -> {infos[station]} ({len(texte.splitlines())-1} niveaux)")
+                        succes = True
+                        break
+            except Exception as e:
+                print(f"Attente Wyoming {station} ({dt.strftime('%d/%m %HZ')}, essai {essai+1}) : {e}")
+                if "503" in str(e):
+                    time.sleep(6.0)
+                    continue
+                break
+
+        if succes:
+            break
 
 with open("donnees/infos.json", "w", encoding="utf-8") as f:
     json.dump(infos, f, ensure_ascii=False, indent=2)
