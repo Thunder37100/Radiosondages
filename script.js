@@ -17,16 +17,20 @@ async function chargerStationEnLigne(codeStation) {
   infoFichier.innerText = `Chargement de ${nomLieu}...`;
 
   try {
+    const domaineRaw = Array.of("raw", "githubusercontent", "com").join(".");
+    const baseRaw = "https://" + domaineRaw + "/Thunder37100/Radiosondages/main/donnees";
+
     // 1. On lit le fichier infos.json généré par le robot pour connaître l'heure du run
     let texteRun = "Dernier run disponible";
-    const repInfos = await fetch("donnees/infos.json?t=" + Date.now());
+    const repInfos = await fetch(`${baseRaw}/infos.json?t=` + Date.now());
     if (repInfos.ok) {
       const infos = await repInfos.json();
       if (infos[codeStation]) texteRun = infos[codeStation];
     }
 
     // 2. On télécharge le CSV de la station
-    const repCSV = await fetch(`donnees/${codeStation}.csv?t=` + Date.now());
+    const repCSV = await fetch(`${baseRaw}/${codeStation}.csv?t=` + Date.now());
+
     if (!repCSV.ok) throw new Error("Fichier non disponible");
 
     const contenuCSV = await repCSV.text();
