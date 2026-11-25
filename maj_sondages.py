@@ -41,6 +41,9 @@ for station in STATIONS:
             req = urllib.request.Request(url, headers=HEADERS)
             with urllib.request.urlopen(req, timeout=15) as rep:
                 texte = rep.read().decode("utf-8", errors="ignore")
+                             if station == "07145" and dt == creneaux.__getitem__(0):
+                 print("APERCU OGIMET:", texte[:600])
+
                 lignes_csv = [
                     "pressure_hPa,geopotential height_m,temperature_C,dew point temperature_C,wind direction_degree,wind speed_m/s"
                 ]
