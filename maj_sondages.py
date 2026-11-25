@@ -15,22 +15,42 @@ creneaux = [heure_synoptique - timedelta(hours=12 * i) for i in range(3)]
 for station in STATIONS:
     succes = False
     for dt in creneaux:
-        date_url = dt.strftime("%Y-%m-%d%%20%H:00:00")
-        url = f"https://weather.uwyo.edu/wsgi/sounding?datetime={date_url}&id={station}&type=TEXT:CSV&src=BUFR"
+        ts_iso = dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        # API officielle ouverte d'Iowa State (IEM RAOB)
+        url = f"https://iastate.edu{ts_iso}&station={station}"
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            req = urllib.request.Request(url, headers={"User-Agent": "MeteoAssoBot/1.0"})
             with urllib.request.urlopen(req, timeout=20) as rep:
-                texte = rep.read().decode("utf-8").strip()
-                # Vérifie que le CSV contient bien des données (> 10 lignes)
-                if "pressure_hPa" in texte and len(texte.splitlines()) > 10:
-                    with open(f"donnees/{station}.csv", "w", encoding="utf-8") as f:
-                        f.write(texte)
-                    infos[station] = dt.strftime("Run du %d/%m/%Y à %HZ")
-                    print(f"OK : {station} -> {infos[station]}")
-                    succes = True
-                    break
+                data = json.loads(rep.read().decode("utf-8"))
+                profiles = data.get("profiles", [])
+                if profiles and len(profiles[0].get("profile", [])) > 10:
+                    lignes_csv = [
+                        "pressure_hPa,geopotential height_m,temperature_C,dew point temperature_C,wind direction_degree,wind speed_m/s"
+                    ]
+                    for pt in profiles[0]["profile"]:
+                        p = pt.get("pres")
+                        h = pt.get("hght")
+                        t = pt.get("tmpc")
+                        td = pt.get("dwpc")
+                        dr = pt.get("drct")
+                        sknt = pt.get("sknt")
+
+                        if p is not None and h is not None and t is not None:
+                            td_str = f"{td:.1f}" if td is not None else "NaN"
+                            dr_str = f"{dr:.0f}" if dr is not None else "NaN"
+                            # Conversion noeuds (sknt) -> m/s
+                            vit_str = f"{(sknt * 0.514444):.1f}" if sknt is not None else "NaN"
+                            lignes_csv.append(f"{p},{h},{t},{td_str},{dr_str},{vit_str}")
+
+                    if len(lignes_csv) > 10:
+                        with open(f"donnees/{station}.csv", "w", encoding="utf-8") as f:
+                            f.write("\n".join(lignes_csv))
+                        infos[station] = dt.strftime("Run du %d/%m/%Y à %HZ")
+                        print(f"OK : {station} -> {infos[station]} ({len(lignes_csv)-1} niveaux)")
+                        succes = True
+                        break
         except Exception as e:
-            print(f"Attente pour {station} ({dt}) : {e}")
+            print(f"Attente pour {station} ({ts_iso}) : {e}")
     if not succes:
         print(f"Aucune donnée récente trouvée pour {station}")
 
