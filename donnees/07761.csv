@@ -1,5 +1,5 @@
 pressure_hPa,geopotential height_m,temperature_C,dew point temperature_C,wind direction_degree,wind speed_m/s
-1010.1,5,16.4,14.4,151,1.25
+1010.0,5,16.4,14.4,141,1.28
 1000,86.0,15.6,13.6,157,1.3
 975,300.23,13.8,12.5,194,2.23
 950,519.0,12.1,11.3,207,3.51

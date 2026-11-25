@@ -1,5 +1,5 @@
 pressure_hPa,geopotential height_m,temperature_C,dew point temperature_C,wind direction_degree,wind speed_m/s
-999.1,94,10.2,9.2,16,7.6
+999.2,94,10.3,8.8,22,6.15
 975,302.83,8.3,6.9,17,8.46
 950,512.0,6.7,5.8,12,12.76
 925,731.0,5.3,4.7,17,11.94
@@ -19,4 +19,4 @@ pressure_hPa,geopotential height_m,temperature_C,dew point temperature_C,wind di
 250,10224.76,-54.0,-59.4,357,27.03
 200,11655.81,-54.0,-73.4,349,23.73
 150,13492.54,-56.0,-81.1,341,20.14
-100,16054.17,-59.5,-82.8,337,14.49
+100,16054.17,-59.5,-82.8,340,13.81
