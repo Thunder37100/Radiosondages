@@ -1,17 +1,24 @@
 name: Mise à jour automatique des radiosondages
 
 on:
+  push:
+    branches:
+      - main
   schedule:
-    # Exécution automatique à 02h15 UTC et 14h15 UTC (après publication des runs 00Z et 12Z)
     - cron: '15 2,14 * * *'
-  workflow_dispatch: # Permet aussi de lancer le robot manuellement d'un clic sur GitHub !
+  workflow_dispatch:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
-  update-data:
+  update-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Récupération du dépôt
         uses: actions/checkout@v4
@@ -24,9 +31,18 @@ jobs:
       - name: Téléchargement des 5 sondages français
         run: python maj_sondages.py
 
-      - name: Sauvegarde des nouveaux fichiers CSV sur le site
+      - name: Sauvegarde des nouveaux fichiers CSV
         run: |
           git config --local user.email "bot@github.com"
           git config --local user.name "MeteoBot"
           git add donnees/
           git diff --quiet && git diff --staged --quiet || (git commit -m "Mise à jour auto des sondages" && git push)
+
+      - name: Préparation du site pour GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Publication automatique sur le web
+        id: deployment
+        uses: actions/deploy-pages@v4
