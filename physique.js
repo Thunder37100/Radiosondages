@@ -50,8 +50,9 @@ function souleverParticule(niveaux, idxDepart, tInit, tdInit) {
   const altLCL = nDepart.alt + hLCL;
   const wInit = rapportMelange(tdInit, nDepart.pres);
 
-  let cape = 0, cin = 0, cinTemp = 0, tParc = tInit;
-  let traceParticule = Array.of();
+    let cape = 0, cin = 0, cinTemp = 0, tParc = tInit;
+  const tvInit = tempVirtuelle(tInit, tdInit, nDepart.pres);
+  let traceParticule = Array.of({ pres: nDepart.pres, tv: tvInit });
 
   for (let i = idxDepart; i < niveaux.length - 1; i++) {
     const n1 = niveaux.at(i);
