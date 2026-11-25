@@ -53,7 +53,8 @@ for idx, station in enumerate(STATIONS):
     succes = False
     for dt in creneaux:
         date_url = dt.strftime("%Y-%m-%d%%20%H:00:00")
-        url = "https://" + HOTE + f"/wsgi/sounding?datetime={date_url}&id={station}&type=TEXT:CSV&src=BUFR"
+        id_wyoming = "0-20000-0-07645" if station == "07645" else station
+        url = "https://" + HOTE + f"/wsgi/sounding?datetime={date_url}&id={id_wyoming}&type=TEXT:CSV&src=BUFR"
 
         try:
             time.sleep(4.0)
