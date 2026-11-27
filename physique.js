@@ -123,20 +123,25 @@ function calculerIndices(niveaux) {
   document.getElementById("val-mucape").innerText = `${Math.round(meilleurMU.cape)} J/kg`;
   document.getElementById("val-mucin").innerText = `${Math.round(meilleurMU.cin)} J/kg`;
 
-  // Cinématique (Cisaillement & SRH Bunkers)
+    // Cinématique (Cisaillement & SRH Bunkers)
+  const niveauxVent = niveaux.filter(n => !isNaN(n.u) && !isNaN(n.v) && !isNaN(n.alt));
+
   function interpAltAGL(cibleAGL) {
+    if (niveauxVent.length < 2) return null;
     const cibleAlt = altSol + cibleAGL;
-    for (let i = 0; i < niveaux.length - 1; i++) {
-      const n1 = niveaux.at(i), n2 = niveaux.at(i + 1);
-      if (n1.alt <= cibleAlt && n2.alt >= cibleAlt && !isNaN(n1.u) && !isNaN(n2.u)) {
-        const f = (cibleAlt - n1.alt) / (n2.alt - n1.alt);
+    if (cibleAlt <= niveauxVent.at(0).alt) return { u: niveauxVent.at(0).u, v: niveauxVent.at(0).v };
+    if (cibleAlt >= niveauxVent.at(-1).alt) return { u: niveauxVent.at(-1).u, v: niveauxVent.at(-1).v };
+    for (let i = 0; i < niveauxVent.length - 1; i++) {
+      const n1 = niveauxVent.at(i), n2 = niveauxVent.at(i + 1);
+      if (n1.alt <= cibleAlt && n2.alt >= cibleAlt) {
+        const f = (n2.alt === n1.alt) ? 0 : (cibleAlt - n1.alt) / (n2.alt - n1.alt);
         return { u: n1.u + f * (n2.u - n1.u), v: n1.v + f * (n2.v - n1.v) };
       }
     }
     return null;
   }
 
-    const v0 = interpAltAGL(0), v1 = interpAltAGL(1000), v6 = interpAltAGL(6000);
+  const v0 = interpAltAGL(0), v1 = interpAltAGL(1000), v6 = interpAltAGL(6000);
   let sh1 = 0, sh6 = 0;
 
   if (v0 && v1) {
@@ -163,10 +168,10 @@ function calculerIndices(niveaux) {
     const cx = meanU + 7.5 * (dV / mag), cy = meanV - 7.5 * (dU / mag);
     vecteurRM = { u: cx, v: cy };
 
-    for (let i = 0; i < niveaux.length - 1; i++) {
-      const n1 = niveaux.at(i), n2 = niveaux.at(i + 1);
+    for (let i = 0; i < niveauxVent.length - 1; i++) {
+      const n1 = niveauxVent.at(i), n2 = niveauxVent.at(i + 1);
       const agl2 = n2.alt - altSol;
-      if (agl2 <= 3000 && !isNaN(n1.u) && !isNaN(n2.u)) {
+      if (agl2 <= 3000) {
         const hel = (n2.u - cx) * (n1.v - cy) - (n1.u - cx) * (n2.v - cy);
         if (agl2 <= 1000) srh1 += hel;
         srh3 += hel;
