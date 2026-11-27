@@ -12,7 +12,7 @@ def getaddrinfo_ipv4(*args, **kwargs):
     return tuple(r for r in res if r.__getitem__(0) == socket.AF_INET)
 socket.getaddrinfo = getaddrinfo_ipv4
 
-STATIONS = ("07145", "07110", "07510", "07645", "07761")
+STATIONS = ("07145", "07110", "07510", "07761")
 os.makedirs("donnees", exist_ok=True)
 
 infos = {}
@@ -25,17 +25,18 @@ if os.path.exists("donnees/infos.json"):
 
 cookies = http.cookiejar.CookieJar()
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
+HOTE = ".".join(("weather", "uwyo", "edu"))
+
 opener.addheaders = [
-    ("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"),
+    ("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"),
     ("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,text/csv,*/*;q=0.8"),
     ("Accept-Language", "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7"),
+    ("Referer", "https://" + HOTE + "/upperair/bufrraob.shtml"),
     ("Connection", "keep-alive")
 ]
 
-HOTE = ".".join(("weather", "uwyo", "edu"))
-
 try:
-    opener.open("https://" + HOTE + "/upperair/sounding.shtml", timeout=15).read()
+    opener.open("https://" + HOTE + "/upperair/bufrraob.shtml", timeout=15).read()
     time.sleep(3)
 except Exception as e:
     print(f"Init session Wyoming : {e}")
@@ -45,16 +46,14 @@ heure_synoptique = maintenant.replace(hour=(maintenant.hour // 12) * 12, minute=
 creneaux = tuple(heure_synoptique - timedelta(hours=12 * i) for i in range(2))
 
 for idx, station in enumerate(STATIONS):
-    # Pause de 65s après la 3e station pour contourner le quota du Wyoming (3 requêtes / minute)
     if idx == 3:
         print("Pause de 65 secondes pour réinitialiser le quota serveur...")
         time.sleep(65.0)
 
-        succes = False
+    succes = False
     for dt in creneaux:
         date_url = dt.strftime("%Y-%m-%d%%20%H:00:00")
-        id_wyoming = "0-20000-0-07645" if station == "07645" else station
-        url = "https://" + HOTE + f"/wsgi/sounding?datetime={date_url}&id={id_wyoming}&type=TEXT:CSV&src=BUFR"
+        url = "https://" + HOTE + f"/wsgi/sounding?datetime={date_url}&id={station}&type=TEXT:CSV&src=BUFR"
 
         for essai in range(3):
             try:
@@ -70,7 +69,7 @@ for idx, station in enumerate(STATIONS):
                         break
             except Exception as e:
                 print(f"Attente Wyoming {station} ({dt.strftime('%d/%m %HZ')}, essai {essai+1}/3) : {e}")
-                if "503" in str(e):
+                if "503" in str(e) or "403" in str(e):
                     time.sleep(15.0)
                     continue
                 break
@@ -80,7 +79,6 @@ for idx, station in enumerate(STATIONS):
 
     if not succes:
         print(f"Conservation des données précédentes pour {station}")
-
 
 with open("donnees/infos.json", "w", encoding="utf-8") as f:
     json.dump(infos, f, ensure_ascii=False, indent=2)
